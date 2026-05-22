@@ -33,24 +33,24 @@ from torch.utils.data import DataLoader, TensorDataset
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from scripts import EarlyStopping, FisherAdapTuneTrainer
 
-
 # ---------------------------------------------------------------------------
 # Data
 # ---------------------------------------------------------------------------
 
-NUM_CLASSES   = 4
-IMAGE_SIZE    = 64    # smaller for fast synthetic runs; use 224 for real ImageFolder data
+NUM_CLASSES = 4
+IMAGE_SIZE = 64  # smaller for fast synthetic runs; use 224 for real ImageFolder data
 SYNTH_TRAIN_N = 128
-SYNTH_VAL_N   = 32
+SYNTH_VAL_N = 32
 
 
 def build_synthetic_loaders(batch_size: int):
     """Random tensors shaped like ImageNet images — no files needed."""
+
     def _make(n):
         images = torch.randn(n, 3, IMAGE_SIZE, IMAGE_SIZE)
         labels = torch.randint(0, NUM_CLASSES, (n,))
-        return DataLoader(TensorDataset(images, labels),
-                          batch_size=batch_size, shuffle=True)
+        return DataLoader(TensorDataset(images, labels), batch_size=batch_size, shuffle=True)
+
     return _make(SYNTH_TRAIN_N), _make(SYNTH_VAL_N), NUM_CLASSES
 
 
@@ -59,27 +59,35 @@ def build_folder_loaders(train_dir: str, val_dir: str, batch_size: int, num_work
     try:
         from torchvision import datasets, transforms
     except ImportError as e:
-        raise ImportError("torchvision is required for folder datasets: pip install torchvision") from e
+        raise ImportError(
+            "torchvision is required for folder datasets: pip install torchvision"
+        ) from e
     mean = [0.485, 0.456, 0.406]
-    std  = [0.229, 0.224, 0.225]
-    train_tf = transforms.Compose([
-        transforms.RandomResizedCrop(224),
-        transforms.RandomHorizontalFlip(),
-        transforms.ToTensor(),
-        transforms.Normalize(mean, std),
-    ])
-    val_tf = transforms.Compose([
-        transforms.Resize(256),
-        transforms.CenterCrop(224),
-        transforms.ToTensor(),
-        transforms.Normalize(mean, std),
-    ])
+    std = [0.229, 0.224, 0.225]
+    train_tf = transforms.Compose(
+        [
+            transforms.RandomResizedCrop(224),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            transforms.Normalize(mean, std),
+        ]
+    )
+    val_tf = transforms.Compose(
+        [
+            transforms.Resize(256),
+            transforms.CenterCrop(224),
+            transforms.ToTensor(),
+            transforms.Normalize(mean, std),
+        ]
+    )
     train_ds = datasets.ImageFolder(train_dir, transform=train_tf)
-    val_ds   = datasets.ImageFolder(val_dir,   transform=val_tf)
-    train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True,
-                              num_workers=num_workers, pin_memory=True)
-    val_loader   = DataLoader(val_ds,   batch_size=batch_size, shuffle=False,
-                              num_workers=num_workers, pin_memory=True)
+    val_ds = datasets.ImageFolder(val_dir, transform=val_tf)
+    train_loader = DataLoader(
+        train_ds, batch_size=batch_size, shuffle=True, num_workers=num_workers, pin_memory=True
+    )
+    val_loader = DataLoader(
+        val_ds, batch_size=batch_size, shuffle=False, num_workers=num_workers, pin_memory=True
+    )
     return train_loader, val_loader, len(train_ds.classes)
 
 
@@ -87,12 +95,14 @@ def build_folder_loaders(train_dir: str, val_dir: str, batch_size: int, num_work
 # Step functions
 # ---------------------------------------------------------------------------
 
+
 def make_train_step(loss_fn, device):
     def train_step(model, batch):
         images, labels = batch
         images, labels = images.to(device), labels.to(device)
         logits = model(images)
         return loss_fn(logits, labels)
+
     return train_step
 
 
@@ -106,6 +116,7 @@ def make_val_step(loss_fn, device):
         preds = logits.argmax(dim=1)
         acc = (preds == labels).float().mean().item()
         return {"loss": loss, "accuracy": acc}
+
     return val_step
 
 
@@ -113,22 +124,31 @@ def make_val_step(loss_fn, device):
 # CLI
 # ---------------------------------------------------------------------------
 
+
 def parse_args():
     p = argparse.ArgumentParser(description="FisherAdapTune minimal example")
-    p.add_argument("--train-dir", default=None, help="Path to training image folder (omit to use synthetic data)")
-    p.add_argument("--val-dir",   default=None, help="Path to validation image folder (omit to use synthetic data)")
-    p.add_argument("--num-epochs",   type=int,   default=5)
-    p.add_argument("--batch-size",   type=int,   default=16)
-    p.add_argument("--lr",           type=float, default=1e-4)
+    p.add_argument(
+        "--train-dir",
+        default=None,
+        help="Path to training image folder (omit to use synthetic data)",
+    )
+    p.add_argument(
+        "--val-dir",
+        default=None,
+        help="Path to validation image folder (omit to use synthetic data)",
+    )
+    p.add_argument("--num-epochs", type=int, default=5)
+    p.add_argument("--batch-size", type=int, default=16)
+    p.add_argument("--lr", type=float, default=1e-4)
     p.add_argument("--weight-decay", type=float, default=5e-5)
-    p.add_argument("--num-workers",  type=int,   default=4)
-    p.add_argument("--output-dir",   default="./checkpoints")
+    p.add_argument("--num-workers", type=int, default=4)
+    p.add_argument("--output-dir", default="./checkpoints")
     p.add_argument("--disable-wandb", action="store_true")
     # Fisher / freeze knobs (sensible defaults for a small classifier)
-    p.add_argument("--fisher-ema-interval", type=int,   default=50)
-    p.add_argument("--freeze-interval",     type=int,   default=200)
-    p.add_argument("--fisher-slice-blocks", type=int,   default=4)
-    p.add_argument("--js-variance-lambda",  type=float, default=1.0)
+    p.add_argument("--fisher-ema-interval", type=int, default=50)
+    p.add_argument("--freeze-interval", type=int, default=200)
+    p.add_argument("--fisher-slice-blocks", type=int, default=4)
+    p.add_argument("--js-variance-lambda", type=float, default=1.0)
     return p.parse_args()
 
 
@@ -150,17 +170,26 @@ def main():
     # Models with inplace operations (e.g. ResNet's relu_ and out += identity)
     # conflict with FisherAdapTune's backward hooks and must be avoided or patched.
     model = nn.Sequential(
-        nn.Conv2d(3, 32, kernel_size=3, padding=1), nn.BatchNorm2d(32), nn.ReLU(), nn.MaxPool2d(2),
-        nn.Conv2d(32, 64, kernel_size=3, padding=1), nn.BatchNorm2d(64), nn.ReLU(), nn.MaxPool2d(2),
-        nn.Conv2d(64, 128, kernel_size=3, padding=1), nn.BatchNorm2d(128), nn.ReLU(),
+        nn.Conv2d(3, 32, kernel_size=3, padding=1),
+        nn.BatchNorm2d(32),
+        nn.ReLU(),
+        nn.MaxPool2d(2),
+        nn.Conv2d(32, 64, kernel_size=3, padding=1),
+        nn.BatchNorm2d(64),
+        nn.ReLU(),
+        nn.MaxPool2d(2),
+        nn.Conv2d(64, 128, kernel_size=3, padding=1),
+        nn.BatchNorm2d(128),
+        nn.ReLU(),
         nn.AdaptiveAvgPool2d(4),
         nn.Flatten(),
-        nn.Linear(128 * 4 * 4, 256), nn.ReLU(),
+        nn.Linear(128 * 4 * 4, 256),
+        nn.ReLU(),
         nn.Linear(256, num_classes),
     )
     model = model.to(device)
 
-    loss_fn   = nn.CrossEntropyLoss()
+    loss_fn = nn.CrossEntropyLoss()
     # NOTE: set weight_decay=0.0 in the optimizer — FisherAdapTune applies it
     #       manually to masked parameters only.
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=0.0)
@@ -171,6 +200,7 @@ def main():
     if not args.disable_wandb:
         try:
             import wandb
+
             wandb_run = wandb.init(project="FisherAdapTune-example", config=vars(args))
         except ImportError:
             print("wandb not installed — skipping logging.")
@@ -207,6 +237,7 @@ def main():
 
     if wandb_run is not None:
         import wandb as _wandb
+
         _wandb.finish()
 
 

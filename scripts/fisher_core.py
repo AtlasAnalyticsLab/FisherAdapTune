@@ -28,6 +28,7 @@ _JS_PERCENTILES = (1.0, 99.0)
 # Parameter → module indexing
 # ---------------------------------------------------------------------------
 
+
 @torch.no_grad()
 def index_param_to_module(model: nn.Module) -> Dict[str, Tuple[str, str]]:
     """Map param name → (module_path, module_class_name)."""
@@ -58,6 +59,7 @@ def layer_to_class_map(param_to_modinfo: Dict[str, Tuple[str, str]]) -> Dict[str
 # ---------------------------------------------------------------------------
 # Fisher tensor collection
 # ---------------------------------------------------------------------------
+
 
 @torch.no_grad()
 def collect_fisher_tensors(
@@ -128,6 +130,7 @@ def collect_fisher_tensors(
 # JS-distance helpers
 # ---------------------------------------------------------------------------
 
+
 def _layer_log_range(
     arrays: Tuple[np.ndarray, ...],
     eps: float,
@@ -168,7 +171,11 @@ def _build_histogram_log(values: np.ndarray, bins: np.ndarray, eps: float) -> np
 
 
 def _build_histogram_raw(values: np.ndarray, bins: np.ndarray, eps: float) -> np.ndarray:
-    hist_vals = np.abs(values.astype(np.float64)) if values.size > 0 else np.array([bins[0]], dtype=np.float64)
+    hist_vals = (
+        np.abs(values.astype(np.float64))
+        if values.size > 0
+        else np.array([bins[0]], dtype=np.float64)
+    )
     hist, _ = np.histogram(hist_vals, bins=bins)
     hist = hist.astype(np.float64) + eps
     s = float(hist.sum())
@@ -224,6 +231,7 @@ def js_distance_raw(ref: np.ndarray, cur: np.ndarray) -> Optional[float]:
 # ---------------------------------------------------------------------------
 # Chunk specifications
 # ---------------------------------------------------------------------------
+
 
 @dataclass(frozen=True)
 class ChunkSpec:
@@ -350,7 +358,9 @@ def build_all_chunk_specs(
             layer_path = name.rsplit(".", 1)[0]
         if not cls_name:
             cls_name = ltoc.get(layer_path, "")
-        specs = _build_chunk_specs_for_param(name, param, layer_path, cls_name, slice_blocks, slice_mode)
+        specs = _build_chunk_specs_for_param(
+            name, param, layer_path, cls_name, slice_blocks, slice_mode
+        )
         if specs:
             specs_by_param[name] = specs
             for spec in specs:
@@ -361,6 +371,7 @@ def build_all_chunk_specs(
 # ---------------------------------------------------------------------------
 # Chunk Fisher array collection
 # ---------------------------------------------------------------------------
+
 
 def collect_chunk_fisher_arrays(
     ftensors: Dict[str, torch.Tensor],
@@ -386,6 +397,7 @@ def collect_chunk_fisher_arrays(
 # ---------------------------------------------------------------------------
 # JS history tracking
 # ---------------------------------------------------------------------------
+
 
 def update_chunk_js_history(
     chunk_arrays: Dict[str, np.ndarray],
@@ -462,6 +474,7 @@ def prune_chunk_state(
 # ---------------------------------------------------------------------------
 # Gradient masking
 # ---------------------------------------------------------------------------
+
 
 def _zero_optimizer_state(
     optimizer: torch.optim.Optimizer,
@@ -562,6 +575,7 @@ def register_mask_hooks(
         def _make_hook(pname: str):
             def _mask_grad(grad: torch.Tensor) -> torch.Tensor:
                 return grad * param_train_masks[pname].to(device=grad.device, dtype=grad.dtype)
+
             return _mask_grad
 
         param.register_hook(_make_hook(name))

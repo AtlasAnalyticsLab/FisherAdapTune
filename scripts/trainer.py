@@ -26,7 +26,6 @@ Then:
 
 from __future__ import annotations
 
-import os
 from datetime import datetime as dt
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Set, Tuple
@@ -242,9 +241,7 @@ class FisherAdapTuneTrainer:
         register_mask_hooks(self.model, self._param_train_masks)
 
         self._trainable_chunks: Set[str] = {
-            spec.key
-            for specs in self._chunk_specs_by_param.values()
-            for spec in specs
+            spec.key for specs in self._chunk_specs_by_param.values() for spec in specs
         }
         self._chunk_fisher_ema: Dict[str, np.ndarray] = {}
         self._chunk_js_ema: Dict[str, float] = {}
@@ -289,7 +286,9 @@ class FisherAdapTuneTrainer:
             selected_chunks=self._trainable_chunks,
             param_train_masks=self._param_train_masks,
         )
-        print(f"[Freeze] Step 0 zero-Fisher freeze: tensors={len(names)}, chunks={chunks}, params={elems:,}")
+        print(
+            f"[Freeze] Step 0 zero-Fisher freeze: tensors={len(names)}, chunks={chunks}, params={elems:,}"
+        )
         self._zero_fisher_frozen = True
 
     def _apply_variance_freeze(self) -> None:
@@ -334,7 +333,9 @@ class FisherAdapTuneTrainer:
             allowed_chunks=self._trainable_chunks,
         )
 
-        metric_label = "variation" if self.chunk_selection_metric == "total_variation" else "mean_js"
+        metric_label = (
+            "variation" if self.chunk_selection_metric == "total_variation" else "mean_js"
+        )
         print(
             f"[Freeze] Step {self._total_steps}: {metric_label} "
             f"mean={mean_s:.4f} std={std_s:.4f} λ={self.js_variance_lambda:.3f} "
@@ -348,6 +349,7 @@ class FisherAdapTuneTrainer:
         if self.wandb_run is not None:
             try:
                 import wandb
+
                 wandb.log(
                     {
                         "freeze/score_mean": mean_s,
@@ -390,11 +392,7 @@ class FisherAdapTuneTrainer:
     def _maybe_plot_js(self) -> None:
         if self.disable_fisher_plots:
             return
-        out_path = (
-            self.fisher_dir
-            / f"step_{self._total_steps:07d}"
-            / "js_distance.png"
-        )
+        out_path = self.fisher_dir / f"step_{self._total_steps:07d}" / "js_distance.png"
         plot_js_history(
             chunk_history=self._chunk_js_history,
             out_path=out_path,
@@ -448,8 +446,7 @@ class FisherAdapTuneTrainer:
                     self._apply_initial_zero_fisher_freeze(ftensors)
 
                 should_update_ema = (
-                    self._total_steps == 0
-                    or self._total_steps % self.fisher_ema_interval == 0
+                    self._total_steps == 0 or self._total_steps % self.fisher_ema_interval == 0
                 )
                 if should_update_ema:
                     js_latest = self._update_fisher_js(ftensors)
@@ -457,8 +454,7 @@ class FisherAdapTuneTrainer:
                     js_latest = {}
 
                 should_plot = not self.disable_fisher_plots and (
-                    self._total_steps == 0
-                    or self._total_steps % self.fisher_ema_interval == 0
+                    self._total_steps == 0 or self._total_steps % self.fisher_ema_interval == 0
                 )
                 if should_plot:
                     self._maybe_plot_js()
@@ -510,6 +506,7 @@ class FisherAdapTuneTrainer:
                         payload["fisher/js_max"] = float(np.max(js_vals))
                     try:
                         import wandb
+
                         wandb.log(payload, step=self._total_steps)
                     except Exception:
                         pass
@@ -535,6 +532,7 @@ class FisherAdapTuneTrainer:
                 epoch_payload.update({f"val/{k}": v for k, v in val_metrics.items()})
                 try:
                     import wandb
+
                     wandb.log(epoch_payload, step=self._total_steps)
                 except Exception:
                     pass
@@ -548,10 +546,7 @@ class FisherAdapTuneTrainer:
                     break
 
             # Periodic checkpoint
-            if (
-                self.checkpoint_interval > 0
-                and (epoch + 1) % self.checkpoint_interval == 0
-            ):
+            if self.checkpoint_interval > 0 and (epoch + 1) % self.checkpoint_interval == 0:
                 save_checkpoint(
                     model=self.model,
                     optimizer=self.optimizer,
@@ -578,6 +573,7 @@ class FisherAdapTuneTrainer:
             return
         try:
             import wandb
+
             wandb.log({f"val/{k}": v for k, v in metrics.items()}, step=step)
         except Exception:
             pass

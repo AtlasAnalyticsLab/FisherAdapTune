@@ -30,14 +30,14 @@ import yaml
 from torch.utils.data import DataLoader
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from scripts import EarlyStopping, FisherAdapTuneTrainer
-
 from dataset import SegFormerSegmentationDataset
 
+from scripts import EarlyStopping, FisherAdapTuneTrainer
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _set_seed(seed: int) -> None:
     os.environ["PYTHONHASHSEED"] = str(seed)
@@ -70,6 +70,7 @@ def _disable_inplace_relu(model: nn.Module) -> None:
 # Loss
 # ---------------------------------------------------------------------------
 
+
 class WeightedDiceBCELoss(nn.Module):
     def __init__(self, dice_weight: float = 0.65):
         super().__init__()
@@ -89,10 +90,11 @@ class WeightedDiceBCELoss(nn.Module):
 # Data
 # ---------------------------------------------------------------------------
 
+
 def build_dataloaders(cfg: Dict):
     image_size = int(cfg.get("image_size", 256))
     train_ds = SegFormerSegmentationDataset(cfg["train_data_path"], image_size=image_size)
-    val_ds   = SegFormerSegmentationDataset(cfg["validation_data_path"], image_size=image_size)
+    val_ds = SegFormerSegmentationDataset(cfg["validation_data_path"], image_size=image_size)
     num_workers = int(cfg.get("num_workers", 2))
     ldr_kw = dict(
         batch_size=int(cfg.get("batch_size", 4)),
@@ -104,7 +106,12 @@ def build_dataloaders(cfg: Dict):
     )
     return (
         DataLoader(train_ds, shuffle=True, **ldr_kw),
-        DataLoader(val_ds, shuffle=False, drop_last=False, **{k: v for k, v in ldr_kw.items() if k != "drop_last"}),
+        DataLoader(
+            val_ds,
+            shuffle=False,
+            drop_last=False,
+            **{k: v for k, v in ldr_kw.items() if k != "drop_last"},
+        ),
     )
 
 
@@ -112,7 +119,10 @@ def build_dataloaders(cfg: Dict):
 # Model
 # ---------------------------------------------------------------------------
 
-def build_segformer(cfg: Dict, device: torch.device, model_name_override: Optional[str] = None) -> nn.Module:
+
+def build_segformer(
+    cfg: Dict, device: torch.device, model_name_override: Optional[str] = None
+) -> nn.Module:
     try:
         import segmentation_models_pytorch as smp
     except ImportError as exc:
@@ -141,12 +151,14 @@ def build_segformer(cfg: Dict, device: torch.device, model_name_override: Option
 # Forward functions
 # ---------------------------------------------------------------------------
 
+
 def make_train_step(loss_fn: nn.Module, device: torch.device, devtype: str):
     def train_step(model, batch):
         xb, yb = batch
         xb = xb.to(device, non_blocking=(devtype == "cuda"))
         yb = yb.to(device, non_blocking=(devtype == "cuda"))
         return loss_fn(model(xb), yb)
+
     return train_step
 
 
@@ -159,17 +171,18 @@ def make_val_step(loss_fn: nn.Module, device: torch.device, devtype: str):
             out = model(xb)
         loss_val = loss_fn(out, yb).item()
         preds = (torch.sigmoid(out) >= 0.5).long()
-        gt    = (yb >= 0.5).long()
+        gt = (yb >= 0.5).long()
         tp = int((preds * gt).sum())
         fp = int((preds * (1 - gt)).sum())
         fn = int(((1 - preds) * gt).sum())
         tn = int(((1 - preds) * (1 - gt)).sum())
         total = tp + fp + fn + tn
         return {
-            "loss":     loss_val,
+            "loss": loss_val,
             "accuracy": (tp + tn) / max(1, total),
-            "f1":       (2 * tp) / max(1, 2 * tp + fp + fn),
+            "f1": (2 * tp) / max(1, 2 * tp + fp + fn),
         }
+
     return val_step
 
 
@@ -177,10 +190,13 @@ def make_val_step(loss_fn: nn.Module, device: torch.device, devtype: str):
 # CLI
 # ---------------------------------------------------------------------------
 
+
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="FisherAdapTune — SegFormer crack segmentation")
     p.add_argument("--config", default="crack_segmentation/config_segformer.yaml")
-    p.add_argument("--segformer-model-name", default=None, help="Override segformer_model_name in config.")
+    p.add_argument(
+        "--segformer-model-name", default=None, help="Override segformer_model_name in config."
+    )
     p.add_argument("--slurm", default=None)
     p.add_argument("--random-seed", type=int, default=None)
     p.add_argument("--disable-wandb", action="store_true")
@@ -196,7 +212,9 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--chunk-selection-metric", choices=("total_variation", "mean_js"), default=None)
     p.add_argument("--fisher-slice-mode", choices=("row", "column"), default=None)
     p.add_argument("--fisher-slice-blocks", type=int, default=None)
-    p.add_argument("--fisher-row-blocks", type=int, default=None, help="Alias for --fisher-slice-blocks.")
+    p.add_argument(
+        "--fisher-row-blocks", type=int, default=None, help="Alias for --fisher-slice-blocks."
+    )
     p.add_argument("--js-distance-mode", choices=("log", "raw"), default=None)
     p.add_argument("--val-interval", type=int, default=None)
     p.add_argument("--save-file-name", default=None)
@@ -231,11 +249,17 @@ def main() -> None:
     fisher_ema_interval = max(1, int(_pick(args.fisher_ema_interval, "fisher_ema_interval", 300)))
     freeze_interval = max(1, int(_pick(args.freeze_interval, "freeze_interval", 3000)))
     fisher_slice_mode = str(_pick(args.fisher_slice_mode, "fisher_slice_mode", "row"))
-    fisher_slice_blocks_arg = args.fisher_slice_blocks if args.fisher_slice_blocks is not None else args.fisher_row_blocks
+    fisher_slice_blocks_arg = (
+        args.fisher_slice_blocks if args.fisher_slice_blocks is not None else args.fisher_row_blocks
+    )
     fisher_slice_blocks = max(1, int(_pick(fisher_slice_blocks_arg, "fisher_slice_blocks", 4)))
     js_distance_mode = str(_pick(args.js_distance_mode, "js_distance_mode", "log"))
-    chunk_selection_metric = str(_pick(args.chunk_selection_metric, "chunk_selection_metric", "total_variation"))
-    js_variance_lambda = float(_pick(args.stage2_js_variance_lambda, "stage2_js_variance_lambda", 1.0))
+    chunk_selection_metric = str(
+        _pick(args.chunk_selection_metric, "chunk_selection_metric", "total_variation")
+    )
+    js_variance_lambda = float(
+        _pick(args.stage2_js_variance_lambda, "stage2_js_variance_lambda", 1.0)
+    )
     val_interval_raw = _pick(args.val_interval, "val_interval", None)
     val_interval = max(1, int(val_interval_raw)) if val_interval_raw is not None else None
     save_file_name = args.save_file_name or cfg.get("save_file_name", "segformer_fisher_adapt_tune")
@@ -250,17 +274,21 @@ def main() -> None:
     loss_fn = WeightedDiceBCELoss(dice_weight=lambda_value)
     optimizer = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=0.0)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_epochs)
-    early_stopping = EarlyStopping(patience=int(cfg.get("early_stopping_patience", 5)), verbose=True)
+    early_stopping = EarlyStopping(
+        patience=int(cfg.get("early_stopping_patience", 5)), verbose=True
+    )
 
     wandb_run = None
     if not args.disable_wandb:
         try:
             import wandb
+
             timestamp = dt.now().strftime("%Y%m%d-%H%M%S")
             model_name = args.segformer_model_name or cfg.get("segformer_model_name", "mit_b0")
             wandb_run = wandb.init(
                 project=args.wandb_project or cfg.get("wandb_project", "FisherAdapTune-SegFormer"),
-                name=args.wandb_name or cfg.get("wandb_name", f"segformer_{model_name}_{timestamp}"),
+                name=args.wandb_name
+                or cfg.get("wandb_name", f"segformer_{model_name}_{timestamp}"),
                 group=args.wandb_group or cfg.get("wandb_group"),
                 mode=args.wandb_mode or cfg.get("wandb_mode"),
                 config={k: cfg[k] for k in cfg if not k.endswith("_path")},
@@ -302,6 +330,7 @@ def main() -> None:
 
     if wandb_run is not None:
         import wandb as _wandb
+
         _wandb.finish()
 
 

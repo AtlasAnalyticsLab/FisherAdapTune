@@ -1,6 +1,6 @@
 """AdaFisher optimizer for computing diagonal Fisher Information Matrix approximations.
 
-Based on: "AdaFisher: Adaptive Second Order Optimization via Fisher Information" 
+Based on: "AdaFisher: Adaptive Second Order Optimization via Fisher Information"
 https://github.com/AtlasAnalyticsLab/AdaFisher
 
 Used here solely for Fisher statistic collection during FisherAdapTune training.
@@ -8,11 +8,9 @@ Used here solely for Fisher statistic collection during FisherAdapTune training.
 
 from __future__ import annotations
 
-import math
 from math import prod
-from typing import Callable, Dict, List, Optional, Tuple, Type, Union
+from typing import Callable, Dict, List, Optional, Tuple
 
-import torch
 import torch.distributed as dist
 from torch import Tensor, einsum, inf, is_grad_enabled, kron, no_grad, ones_like, zeros_like
 from torch.nn import BatchNorm2d, Conv2d, LayerNorm, Linear, Module, Parameter
@@ -67,6 +65,7 @@ class _ComputeHBarD:
     @staticmethod
     def _conv2d(h: Tensor, layer: Conv2d) -> Tensor:
         from torch import cat
+
         batch_size = h.size(0)
         h = _extract_patches(h, layer.kernel_size, layer.stride, layer.padding, layer.groups)
         spatial_size = h.size(2) * h.size(3)
@@ -79,6 +78,7 @@ class _ComputeHBarD:
     @staticmethod
     def _linear(h: Tensor, layer: Linear) -> Tensor:
         from torch import cat
+
         if len(h.shape) > 2:
             h = h.reshape(-1, h.shape[-1])
         batch_size = h.size(0)
@@ -89,7 +89,9 @@ class _ComputeHBarD:
 
     @staticmethod
     def _batchnorm2d(h: Tensor, layer: BatchNorm2d) -> Tensor:
-        from torch import cat, sum as tsum
+        from torch import cat
+        from torch import sum as tsum
+
         batch_size, spatial_size = h.size(0), h.size(2) * h.size(3)
         sum_h = tsum(h, dim=(0, 2, 3)).unsqueeze(1) / (spatial_size**2)
         h_bar = cat([sum_h, sum_h.new(sum_h.size(0), 1).fill_(1)], 1)
@@ -97,7 +99,9 @@ class _ComputeHBarD:
 
     @staticmethod
     def _layernorm(h: Tensor, layer: LayerNorm) -> Tensor:
-        from torch import cat, sum as tsum
+        from torch import cat
+        from torch import sum as tsum
+
         dim_to_reduce = [d for d in range(h.ndim) if d != 1]
         batch_size = h.shape[0]
         dim_norm = prod([h.shape[dim] for dim in dim_to_reduce if dim != 0])
@@ -136,6 +140,7 @@ class _ComputeSD:
     @staticmethod
     def _batchnorm2d(s: Tensor, layer: BatchNorm2d) -> Tensor:
         from torch import sum as tsum
+
         batch_size = s.size(0)
         sum_s = tsum(s, dim=(0, 2, 3))
         return einsum("i,i->i", sum_s, sum_s) / batch_size
@@ -143,6 +148,7 @@ class _ComputeSD:
     @staticmethod
     def _layernorm(s: Tensor, layer: LayerNorm) -> Tensor:
         from torch import sum as tsum
+
         batch_size = s.size(0)
         sum_s = tsum(s, dim=tuple(range(s.ndim - 1)))
         return einsum("i,i->i", sum_s, sum_s) / batch_size
@@ -206,7 +212,9 @@ class AdaFisherBackbone(Optimizer):
             dist.all_reduce(self.S_D[module], op=dist.ReduceOp.SUM)
             self.H_bar_D[module] /= dist.get_world_size()
             self.S_D[module] /= dist.get_world_size()
-        F_tilde = kron(self.H_bar_D[module].unsqueeze(1), self.S_D[module].unsqueeze(0)).t() + self.Lambda
+        F_tilde = (
+            kron(self.H_bar_D[module].unsqueeze(1), self.S_D[module].unsqueeze(0)).t() + self.Lambda
+        )
         if module.bias is not None:
             F_tilde = [F_tilde[:, :-1], F_tilde[:, -1:]]
             F_tilde[0] = F_tilde[0].view(*module.weight.grad.data.size())

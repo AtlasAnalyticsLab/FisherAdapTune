@@ -21,7 +21,7 @@ import random
 import sys
 from datetime import datetime as dt
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Tuple
 
 import numpy as np
 import torch
@@ -30,14 +30,14 @@ import yaml
 from torch.utils.data import DataLoader
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from scripts import EarlyStopping, FisherAdapTuneTrainer
-
 from dataset import SAM2SegmentationDataset
 
+from scripts import EarlyStopping, FisherAdapTuneTrainer
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _set_seed(seed: int) -> None:
     os.environ["PYTHONHASHSEED"] = str(seed)
@@ -62,6 +62,7 @@ def _build_device() -> Tuple[torch.device, str]:
 # Loss
 # ---------------------------------------------------------------------------
 
+
 class DiceBCELoss(nn.Module):
     def __init__(self, gamma: float = 0.65):
         super().__init__()
@@ -81,19 +82,23 @@ class DiceBCELoss(nn.Module):
 # Data
 # ---------------------------------------------------------------------------
 
+
 def build_dataloaders(cfg: Dict, device: torch.device):
     ds_kwargs = dict(
-        image_transform=None,   # uses sam2_default_transforms() internally
+        image_transform=None,  # uses sam2_default_transforms() internally
         mask_transform=None,
     )
     train_ds = SAM2SegmentationDataset(cfg["train_data_path"], **ds_kwargs)
-    val_ds   = SAM2SegmentationDataset(cfg["validation_data_path"], **ds_kwargs)
+    val_ds = SAM2SegmentationDataset(cfg["validation_data_path"], **ds_kwargs)
     ldr_kw = dict(
         batch_size=int(cfg.get("batch_size", 2)),
         num_workers=int(cfg.get("num_workers", 8)),
         pin_memory=bool(cfg.get("pin_memory", True)),
-        persistent_workers=bool(cfg.get("persistent_workers", True)) and int(cfg.get("num_workers", 8)) > 0,
-        prefetch_factor=int(cfg.get("prefetch_factor", 2)) if int(cfg.get("num_workers", 8)) > 0 else None,
+        persistent_workers=bool(cfg.get("persistent_workers", True))
+        and int(cfg.get("num_workers", 8)) > 0,
+        prefetch_factor=int(cfg.get("prefetch_factor", 2))
+        if int(cfg.get("num_workers", 8)) > 0
+        else None,
     )
     return (
         DataLoader(train_ds, shuffle=True, **ldr_kw),
@@ -104,6 +109,7 @@ def build_dataloaders(cfg: Dict, device: torch.device):
 # ---------------------------------------------------------------------------
 # Forward functions
 # ---------------------------------------------------------------------------
+
 
 def make_train_step(predictor, loss_fn, device: torch.device, devtype: str):
     def train_step(model, batch):
@@ -117,9 +123,11 @@ def make_train_step(predictor, loss_fn, device: torch.device, devtype: str):
 
         predictor.set_image_batch(images)
         _, _, _, unnorm_box = predictor._prep_prompts(
-            point_coords=None, point_labels=None,
+            point_coords=None,
+            point_labels=None,
             box=torch.stack(bboxes).to(device, non_blocking=(devtype == "cuda")),
-            mask_logits=None, normalize_coords=False,
+            mask_logits=None,
+            normalize_coords=False,
         )
         sparse_emb, dense_emb = predictor.model.sam_prompt_encoder(
             points=None,
@@ -158,9 +166,11 @@ def make_val_step(predictor, loss_fn, device: torch.device, devtype: str):
         with torch.inference_mode():
             predictor.set_image_batch(images)
             _, _, _, unnorm_box = predictor._prep_prompts(
-                point_coords=None, point_labels=None,
+                point_coords=None,
+                point_labels=None,
                 box=torch.stack(bboxes).to(device, non_blocking=(devtype == "cuda")),
-                mask_logits=None, normalize_coords=False,
+                mask_logits=None,
+                normalize_coords=False,
             )
             sparse_emb, dense_emb = predictor.model.sam_prompt_encoder(
                 points=None,
@@ -180,20 +190,22 @@ def make_val_step(predictor, loss_fn, device: torch.device, devtype: str):
                 repeat_image=False,
                 high_res_features=high_res,
             )
-            prd_masks = predictor._transforms.postprocess_masks(low_res_masks, predictor._orig_hw[-1])
+            prd_masks = predictor._transforms.postprocess_masks(
+                low_res_masks, predictor._orig_hw[-1]
+            )
 
         loss_val = loss_fn(prd_masks, masks).item()
         pred_bin = prd_masks > 0.0
-        gt_bin   = masks > 0.5
+        gt_bin = masks > 0.5
         tp = int((pred_bin & gt_bin).sum())
         fp = int((pred_bin & ~gt_bin).sum())
         fn = int((~pred_bin & gt_bin).sum())
         tn = int((~pred_bin & ~gt_bin).sum())
         total = tp + fp + fn + tn
         return {
-            "loss":     loss_val,
+            "loss": loss_val,
             "accuracy": (tp + tn) / max(1, total),
-            "f1":       (2 * tp) / max(1, 2 * tp + fp + fn),
+            "f1": (2 * tp) / max(1, 2 * tp + fp + fn),
         }
 
     return val_step
@@ -202,6 +214,7 @@ def make_val_step(predictor, loss_fn, device: torch.device, devtype: str):
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
+
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="FisherAdapTune — SAM2 crack segmentation")
@@ -264,8 +277,12 @@ def main() -> None:
     fisher_slice_mode = str(_pick(args.fisher_slice_mode, "fisher_slice_mode", "row"))
     fisher_slice_blocks = max(1, int(_pick(args.fisher_slice_blocks, "fisher_slice_blocks", 4)))
     js_distance_mode = str(_pick(args.js_distance_mode, "js_distance_mode", "log"))
-    chunk_selection_metric = str(_pick(args.chunk_selection_metric, "chunk_selection_metric", "total_variation"))
-    js_variance_lambda = float(_pick(args.stage2_js_variance_lambda, "stage2_js_variance_lambda", 1.0))
+    chunk_selection_metric = str(
+        _pick(args.chunk_selection_metric, "chunk_selection_metric", "total_variation")
+    )
+    js_variance_lambda = float(
+        _pick(args.stage2_js_variance_lambda, "stage2_js_variance_lambda", 1.0)
+    )
     val_interval_raw = _pick(args.val_interval, "val_interval", None)
     val_interval = max(1, int(val_interval_raw)) if val_interval_raw is not None else None
     save_file_name = args.save_file_name or cfg.get("save_file_name", "sam2_fisher_adapt_tune")
@@ -292,12 +309,15 @@ def main() -> None:
     loss_fn = DiceBCELoss(gamma=lambda_value)
     optimizer = torch.optim.AdamW(predictor.model.parameters(), lr=lr, weight_decay=0.0)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=num_epochs)
-    early_stopping = EarlyStopping(patience=int(cfg.get("early_stopping_patience", 3)), verbose=True)
+    early_stopping = EarlyStopping(
+        patience=int(cfg.get("early_stopping_patience", 3)), verbose=True
+    )
 
     wandb_run = None
     if not args.disable_wandb:
         try:
             import wandb
+
             timestamp = dt.now().strftime("%Y%m%d-%H%M%S")
             wandb_run = wandb.init(
                 project=args.wandb_project or cfg.get("wandb_project", "FisherAdapTune-SAM2"),
@@ -343,6 +363,7 @@ def main() -> None:
 
     if wandb_run is not None:
         import wandb as _wandb
+
         _wandb.finish()
 
 

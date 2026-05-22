@@ -12,7 +12,6 @@ Two dataset variants are provided:
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 from typing import Callable, Optional, Tuple
 
@@ -22,14 +21,12 @@ from PIL import Image, ImageFile
 from torchvision.datasets import VisionDataset
 from torchvision.transforms import v2
 
-
 SUPPORTED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".tif", ".tiff"}
 
 
 def _list_files(directory: Path):
     return sorted(
-        f for f in directory.iterdir()
-        if f.is_file() and f.suffix.lower() in SUPPORTED_EXTENSIONS
+        f for f in directory.iterdir() if f.is_file() and f.suffix.lower() in SUPPORTED_EXTENSIONS
     )
 
 
@@ -53,6 +50,7 @@ def get_bounding_box(mask_array: np.ndarray, jitter: int = 20) -> np.ndarray:
 # SAM2 dataset
 # ---------------------------------------------------------------------------
 
+
 def sam2_default_transforms(image_size: int = 256):
     """Default transforms for SAM2 fine-tuning.
 
@@ -60,16 +58,20 @@ def sam2_default_transforms(image_size: int = 256):
     Masks are resized to the same size and kept as binary float.
     The bbox is computed at ``image_size`` resolution.
     """
-    image_tf = v2.Compose([
-        v2.Resize((image_size, image_size)),
-        v2.ToImage(),
-        v2.ToDtype(torch.float32, scale=True),
-    ])
-    mask_tf = v2.Compose([
-        v2.Resize((image_size, image_size)),
-        v2.ToImage(),
-        v2.ToDtype(torch.float32, scale=False),
-    ])
+    image_tf = v2.Compose(
+        [
+            v2.Resize((image_size, image_size)),
+            v2.ToImage(),
+            v2.ToDtype(torch.float32, scale=True),
+        ]
+    )
+    mask_tf = v2.Compose(
+        [
+            v2.Resize((image_size, image_size)),
+            v2.ToImage(),
+            v2.ToDtype(torch.float32, scale=False),
+        ]
+    )
     return image_tf, mask_tf
 
 
@@ -130,22 +132,26 @@ class SAM2SegmentationDataset(VisionDataset):
 # ---------------------------------------------------------------------------
 
 _CRACK_MEAN = (0.511, 0.507, 0.496)
-_CRACK_STD  = (0.126, 0.126, 0.126)
+_CRACK_STD = (0.126, 0.126, 0.126)
 
 
 def segformer_default_transforms(image_size: int = 256):
     """Default transforms for SegFormer fine-tuning on crack images."""
-    image_tf = v2.Compose([
-        v2.Resize((image_size, image_size)),
-        v2.ToImage(),
-        v2.ToDtype(torch.float32, scale=True),
-        v2.Normalize(_CRACK_MEAN, _CRACK_STD),
-    ])
-    mask_tf = v2.Compose([
-        v2.Resize((image_size, image_size)),
-        v2.ToImage(),
-        v2.ToDtype(torch.float32, scale=False),
-    ])
+    image_tf = v2.Compose(
+        [
+            v2.Resize((image_size, image_size)),
+            v2.ToImage(),
+            v2.ToDtype(torch.float32, scale=True),
+            v2.Normalize(_CRACK_MEAN, _CRACK_STD),
+        ]
+    )
+    mask_tf = v2.Compose(
+        [
+            v2.Resize((image_size, image_size)),
+            v2.ToImage(),
+            v2.ToDtype(torch.float32, scale=False),
+        ]
+    )
     return image_tf, mask_tf
 
 

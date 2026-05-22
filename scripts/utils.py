@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -71,6 +70,7 @@ def plot_js_history(
     """
     try:
         import matplotlib
+
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
     except ImportError:
@@ -114,6 +114,7 @@ def plot_js_history(
     if log_to_wandb:
         try:
             import wandb
+
             wandb.log({wandb_key: wandb.Image(str(out_path))}, step=step)
         except Exception:
             pass
