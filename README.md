@@ -1,5 +1,7 @@
 # FisherAdapTune
 
+![FisherAdapTune](assets/FisherAdapTune.png)
+
 **Fisher-guided Adaptive Fine-Tuning** is a model-agnostic framework that uses the Fisher Information Matrix (FIM) to progressively freeze parameter groups that have converged during fine-tuning, reducing compute and overfitting without manual layer selection.
 
 ---
