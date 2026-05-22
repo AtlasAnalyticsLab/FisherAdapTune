@@ -10,7 +10,7 @@
 
 FisherAdapTune wraps any PyTorch model and optimizer with a Fisher-guided chunk-freeze loop:
 
-1. **Fisher collection** - diagonal FIM statistics are accumulated via [AdaFisher](scripts/adafisher.py) hooks on `Linear`, `Conv2d`, `BatchNorm2d`, and `LayerNorm` layers.
+1. **Fisher collection** - diagonal FIM statistics are accumulated via [AdaFisher](https://github.com/AtlasAnalyticsLab/AdaFisher) hooks on `Linear`, `Conv2d`, `BatchNorm2d`, and `LayerNorm` layers.
 2. **JS divergence tracking** - Jensen-Shannon distance between consecutive Fisher histograms is computed per parameter chunk. A low, stable JS distance signals that a chunk has stopped learning.
 3. **Iterative freezing** — parameter groups whose JS scores fall below an adaptive threshold are masked and frozen. Frozen parameter groups are skipped in forward/backward passes, saving computation in later training stages.
 
