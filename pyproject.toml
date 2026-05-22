@@ -1,0 +1,77 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fisheradaptune"
+version = "0.1.0"
+description = "Fisher-guided Adaptive Fine-Tuning: model-agnostic progressive parameter freezing via Fisher Information Matrix statistics."
+requires-python = ">=3.9"
+license = {file = "LICENSE"}
+readme = "README.md"
+authors = [
+    {name = "Ghodsieh Rostami", email = "ghodsieh.rostami@gmail.com"},
+]
+keywords = [
+    "fine-tuning",
+    "fisher-information",
+    "adaptive-training",
+    "parameter-efficiency",
+    "deep-learning",
+    "pytorch",
+    "transfer-learning",
+    "pruning",
+    "jensen-shannon-divergence",
+    "sam2",
+    "segmentation",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: Free for non-commercial use",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Typing :: Typed",
+]
+dependencies = [
+    "torch>=2.0",
+    "numpy>=1.24",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+logging = ["wandb"]
+plotting = ["matplotlib"]
+dev = [
+    "ruff==0.4.4",
+    "mypy==1.10.0",
+    "pre-commit==3.7.1",
+]
+
+[project.urls]
+Homepage = "https://github.com/<your-username>/FisherAdapTune"
+Repository = "https://github.com/<your-username>/FisherAdapTune"
+"Bug Tracker" = "https://github.com/<your-username>/FisherAdapTune/issues"
+
+[tool.setuptools.packages.find]
+include = ["scripts*"]
+
+[tool.ruff]
+target-version = "py39"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E9", "F", "I"]
+
+[tool.mypy]
+python_version = "3.9"
+ignore_missing_imports = true
+pretty = true
+show_error_codes = true
+warn_redundant_casts = true
+warn_unused_ignores = true

@@ -1,0 +1,46 @@
+# FisherAdapTune — SegFormer crack segmentation config
+
+# ── Data ────────────────────────────────────────────────────────────────────
+train_data_path: /path/to/train
+validation_data_path: /path/to/validation
+
+# ── SegFormer model ──────────────────────────────────────────────────────────
+segformer_model_name: mit_b0      # mit_b0 / mit_b1 / mit_b2 / mit_b3 / mit_b4 / mit_b5
+encoder_weights: imagenet
+num_classes: 1
+image_size: 256
+
+# ── Training ─────────────────────────────────────────────────────────────────
+num_epochs: 50
+batch_size: 4
+learning_rate: 1.0e-4
+weight_decay: 5.0e-5
+num_workers: 2
+pin_memory: true
+persistent_workers: true
+prefetch_factor: 2
+seed: 0
+lambda_value: 0.65              # Dice-BCE mixing coefficient
+early_stopping_patience: 5
+checkpoint_interval: 5
+output_dir: "."
+save_file_name: "segformer_fisher_adapt_tune"
+
+# ── Fisher / Freeze ───────────────────────────────────────────────────────────
+adafisher_gamma: [0.8, 0.8]
+adafisher_tcov: 1
+fisher_ema_decay: 0.9
+prev_js_ema_decay: 0.9
+fisher_ema_interval: 300
+freeze_interval: 3000
+fisher_slice_mode: row
+fisher_slice_blocks: 4
+js_distance_mode: log
+chunk_selection_metric: total_variation
+stage2_js_variance_lambda: 1.0
+val_interval: null
+
+# ── W&B ──────────────────────────────────────────────────────────────────────
+wandb_project: FisherAdapTune-SegFormer
+wandb_group: null
+# wandb_mode: offline

@@ -1,0 +1,51 @@
+# FisherAdapTune — SAM2 crack segmentation config
+
+# ── Data ────────────────────────────────────────────────────────────────────
+# train_data_path: /path/to/train
+# validation_data_path: /path/to/validation
+
+train_data_path: /home/g_rostam/tiny_data/train
+validation_data_path: /home/g_rostam/tiny_data/test
+
+# ── SAM2 model ───────────────────────────────────────────────────────────────
+sam2_checkpoint_path: "/home/g_rostam/sam2/sam2.1_hiera_tiny.pt"
+model_cfg: "configs/sam2.1/sam2.1_hiera_t.yaml"
+# sam2_checkpoint_path: "sam2.1_hiera_small.pt"
+# model_cfg: "configs/sam2.1/sam2.1_hiera_s.yaml"
+# sam2_checkpoint_path: "sam2.1_hiera_large.pt"
+# model_cfg: "configs/sam2.1/sam2.1_hiera_l.yaml"
+
+# ── Training ─────────────────────────────────────────────────────────────────
+num_epochs: 1
+batch_size: 2
+learning_rate: 1.0e-6
+weight_decay: 5.0e-5
+num_workers: 8
+pin_memory: true
+persistent_workers: true
+prefetch_factor: 2
+seed: 0
+lambda_value: 0.65              # Dice-BCE mixing coefficient
+early_stopping_patience: 3
+checkpoint_interval: 5
+output_dir: "."
+save_file_name: "sam2_fisher_adapt_tune"
+
+# ── Fisher / Freeze ───────────────────────────────────────────────────────────
+adafisher_gamma: [0.8, 0.8]
+adafisher_tcov: 1
+fisher_ema_decay: 0.9
+prev_js_ema_decay: 0.9
+fisher_ema_interval: 300
+freeze_interval: 3000
+fisher_slice_mode: row
+fisher_slice_blocks: 4
+js_distance_mode: log
+chunk_selection_metric: total_variation
+stage2_js_variance_lambda: 1.0
+val_interval: null
+
+# ── W&B ──────────────────────────────────────────────────────────────────────
+wandb_project: FisherAdapTune-SAM2
+wandb_group: null
+# wandb_mode: offline

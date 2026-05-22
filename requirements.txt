@@ -1,0 +1,7 @@
+torch>=2.0
+numpy>=1.24
+pyyaml>=6.0
+# Optional — required only for W&B logging
+wandb
+# Optional — required only for JS-distance plots
+matplotlib
