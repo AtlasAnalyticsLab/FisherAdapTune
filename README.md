@@ -20,7 +20,7 @@ The trainer is fully **plug-and-play**: you supply the model, optimizer, data lo
 ## Installation
 
 ```bash
-git clone https://github.com/<your-username>/FisherAdapTune.git
+git clone https://github.com/Mahdi-S-Hosseini/FisherAdapTune.git
 cd FisherAdapTune
 pip install -e .
 ```

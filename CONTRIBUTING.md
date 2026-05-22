@@ -4,7 +4,7 @@ We welcome bug reports, documentation improvements, and feature suggestions.
 
 ## Reporting Issues
 
-Open a [GitHub Issue](https://github.com/<your-username>/FisherAdapTune/issues) and include:
+Open a [GitHub Issue](https://github.com/Mahdi-S-Hosseini/FisherAdapTune/issues) and include:
 
 - A clear description of the problem
 - A minimal reproducible example (ideally using `examples/minimal_image_classifier.py`)
@@ -13,7 +13,7 @@ Open a [GitHub Issue](https://github.com/<your-username>/FisherAdapTune/issues) 
 ## Development Setup
 
 ```bash
-git clone https://github.com/<your-username>/FisherAdapTune.git
+git clone https://github.com/Mahdi-S-Hosseini/FisherAdapTune.git
 cd FisherAdapTune
 pip install -e ".[dev]"
 pre-commit install
