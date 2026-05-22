@@ -71,6 +71,7 @@ select = ["E9", "F", "I"]
 [tool.mypy]
 python_version = "3.9"
 ignore_missing_imports = true
+follow_imports = "silent"
 pretty = true
 show_error_codes = true
 warn_redundant_casts = true
