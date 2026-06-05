@@ -353,6 +353,8 @@ def build_all_chunk_specs(
     chunk_to_class: Dict[str, str] = {}
     ltoc = layer_to_class_map(param_to_modinfo)
     for name, param in model.named_parameters():
+        if not param.requires_grad:
+            continue
         layer_path, cls_name = param_to_modinfo.get(name, ("", ""))
         if not layer_path:
             layer_path = name.rsplit(".", 1)[0]
@@ -570,6 +572,8 @@ def register_mask_hooks(
     """Register backward hooks that multiply gradients by the current trainability mask."""
     for name, param in model.named_parameters():
         if name not in param_train_masks:
+            continue
+        if not param.requires_grad:
             continue
 
         def _make_hook(pname: str):
