@@ -30,21 +30,6 @@ def _list_files(directory: Path):
     )
 
 
-def get_bounding_box(mask_array: np.ndarray, jitter: int = 20) -> np.ndarray:
-    """Return a [x_min, y_min, x_max, y_max] bounding box with random jitter.
-
-    If the mask is empty, returns [0, 0, 0, 0].
-    """
-    y_indices, x_indices = np.where(mask_array > 0)
-    if len(x_indices) == 0:
-        return np.array([0, 0, 0, 0], dtype=np.float32)
-    H, W = mask_array.shape
-    x_min = max(0, int(np.min(x_indices)) - np.random.randint(0, jitter + 1))
-    x_max = min(W, int(np.max(x_indices)) + np.random.randint(0, jitter + 1))
-    y_min = max(0, int(np.min(y_indices)) - np.random.randint(0, jitter + 1))
-    y_max = min(H, int(np.max(y_indices)) + np.random.randint(0, jitter + 1))
-    return np.array([x_min, y_min, x_max, y_max], dtype=np.float32)
-
 
 # ---------------------------------------------------------------------------
 # SAM2 dataset
@@ -81,7 +66,7 @@ class SAM2SegmentationDataset(VisionDataset):
     Returns:
         image  : FloatTensor [3, H, W]  — pixel values in [0, 1]
         mask   : FloatTensor [1, H, W]  — binary {0, 1}
-        bbox   : FloatTensor [4]        — [x_min, y_min, x_max, y_max] at bbox_size resolution
+        bbox   : FloatTensor [4]        — [0, 0, W, H] covering the full image
     """
 
     def __init__(
@@ -115,9 +100,8 @@ class SAM2SegmentationDataset(VisionDataset):
         image = Image.open(self.images_files[index]).convert("RGB")
         mask = Image.open(self.gt_files[index]).convert("1")
 
-        # Compute bbox at bbox_size resolution before any further transforms
-        mask_for_bbox = mask.resize((self.bbox_size, self.bbox_size))
-        bbox = get_bounding_box(np.array(mask_for_bbox))
+        W, H = image.size
+        bbox = np.array([0, 0, W, H], dtype=np.float32)
 
         if self.image_transform is not None:
             image = self.image_transform(image)
