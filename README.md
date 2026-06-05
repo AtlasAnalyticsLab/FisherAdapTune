@@ -2,9 +2,12 @@
 
 **Fisher-guided Adaptive Fine-Tuning (FisherAdapTune)** is a model-agnostic framework for adaptive, parameter-efficient fine-tuning. Instead of selecting trainable parameters from fixed architectural rules, it tracks how each parameter group's Fisher geometry evolves during training and keeps updating only the groups that still show meaningful task-driven drift.
 
-The method uses Jensen-Shannon distance between consecutive Fisher distributions as a scale-invariant signal of adaptation: parameter groups with stabilized Fisher structure are progressively frozen, while groups with continunous curvature shift remain trainable. This turns fine-tuning into a dynamic, task-aware process that reduces unnecessary updates, and improves the efficiency-generalization trade-off without adding inference-time overhead.
+The method uses Jensen-Shannon distance between consecutive Fisher distributions as a scale-invariant signal of adaptation: parameter groups with stabilized Fisher structure are progressively frozen, while groups with continuous curvature shift remain trainable. This turns fine-tuning into a dynamic, task-aware process that reduces unnecessary updates, and improves the efficiency-generalization trade-off without adding inference-time overhead.
+
 
 ![FisherAdapTune](assets/FisherAdapTune.png)
+
+Results show that FisherAdapTune recovers the standard transfer-learning hierarchy automatically, freezing generic low-level components earlier while keeping task-dependent modules trainable for longer.
 
 <!-- [![arXiv](https://img.shields.io/badge/arXiv-XXXX.XXXXX-b31b1b.svg)](https://arxiv.org/abs/XXXX.XXXXX) -->
 
@@ -23,11 +26,33 @@ The trainer is fully **plug-and-play**: you can supply the model, optimizer, dat
 
 ---
 
+## Repository Structure
+
+```
+FisherAdapTune/
+├── scripts/                  # Core library
+│   ├── __init__.py           # Public API
+│   ├── adafisher.py          # Diagonal FIM optimizer / Fisher collector
+│   ├── fisher_core.py        # Chunking, JS divergence, masking, freezing
+│   ├── trainer.py            # FisherAdapTuneTrainer (main user interface)
+│   └── utils.py              # EarlyStopping, save_checkpoint, plot_js_history
+├── crack_segmentation/       # SAM2 fine-tuning application
+│   ├── train_sam2.py
+│   ├── config_sam2.yaml
+│   └── dataset.py
+├── examples/
+│   └── minimal_image_classifier.py   # Self-contained runnable example
+├── requirements.txt
+└── pyproject.toml
+```
+
+---
+
 ## Installation
 
 ```bash
-git clone https://github.com/Mahdi-S-Hosseini/FisherAdapTune.git
-cd FisherAdapTune
+conda create -n fisheradaptune python=3.11 -y
+conda activate fisheradaptune
 pip install -e .
 ```
 
@@ -92,7 +117,7 @@ The [crack_segmentation/](crack_segmentation/) directory contains a full applica
 
 ```bash
 cd FisherAdapTune
-conda activate sam2
+conda activate fisheradaptune
 python crack_segmentation/train_sam2.py \
     --config crack_segmentation/config_sam2.yaml \
     --train-data-path /path/to/train \
@@ -128,27 +153,7 @@ Key CLI flags (all override the yaml):
 
 ---
 
-## Repository Structure
 
-```
-FisherAdapTune/
-├── scripts/                  # Core library
-│   ├── __init__.py           # Public API
-│   ├── adafisher.py          # Diagonal FIM optimizer / Fisher collector
-│   ├── fisher_core.py        # Chunking, JS divergence, masking, freezing
-│   ├── trainer.py            # FisherAdapTuneTrainer (main user interface)
-│   └── utils.py              # EarlyStopping, save_checkpoint, plot_js_history
-├── crack_segmentation/       # SAM2 fine-tuning application
-│   ├── train_sam2.py
-│   ├── config_sam2.yaml
-│   └── dataset.py
-├── examples/
-│   └── minimal_image_classifier.py   # Self-contained runnable example
-├── requirements.txt
-└── pyproject.toml
-```
-
----
 
 ## License
 
