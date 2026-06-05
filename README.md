@@ -7,11 +7,27 @@ The method uses Jensen-Shannon distance between consecutive Fisher distributions
 
 ![FisherAdapTune](assets/FisherAdapTune.png)
 
-Results show that FisherAdapTune recovers the standard transfer-learning hierarchy automatically, freezing generic low-level components earlier while keeping task-dependent modules trainable for longer.
+💡 FisherAdapTune recovers the standard transfer-learning hierarchy automatically, freezing generic low-level components earlier while keeping task-dependent modules trainable for longer.
+
+💡 Fisher-drift based selection improves the efficiency-generalization trade-off by preserving groups that continue to adapt while avoiding unnecessary updates to stabilized parameters.
+
+💡 Across crack segmentation experiments, FisherAdapTune improves robustness under distribution shift and supports stronger zero-shot transfer without adding inference-time overhead.
 
 <!-- [![arXiv](https://img.shields.io/badge/arXiv-XXXX.XXXXX-b31b1b.svg)](https://arxiv.org/abs/XXXX.XXXXX) -->
 
 ---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Repository Structure](#repository-structure)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Real-World Example: SAM2 Crack Segmentation](#real-world-example-sam2-crack-segmentation)
+- [Key Hyperparameters](#key-hyperparameters)
+- [Citation](#citation)
+- [Contact](#contact)
+- [License](#license)
 
 ## Overview
 
@@ -19,7 +35,7 @@ FisherAdapTune wraps any PyTorch model and optimizer with a Fisher-guided freeze
 
 1. **Fisher collection** - diagonal FIM statistics are accumulated via [AdaFisher](https://github.com/AtlasAnalyticsLab/AdaFisher) hooks on `Linear`, `Conv2d`, `BatchNorm2d`, and `LayerNorm` layers.
 2. **JS divergence tracking** - Jensen-Shannon distance between consecutive Fisher histograms is computed per parameter chunk. A low, stable JS distance signals that a chunk has stopped learning.
-3. **Iterative freezing** — parameter groups whose JS scores fall below an adaptive threshold are masked and frozen. Frozen parameter groups are skipped in forward/backward passes, saving computation in later training stages.
+3. **Iterative freezing** - parameter groups whose JS scores fall below an adaptive threshold are masked and frozen. Frozen parameter groups are skipped in forward/backward passes, saving computation in later training stages.
 
 
 The trainer is fully **plug-and-play**: you can supply the model, optimizer, data loaders, and two callables (`train_step_fn`, `val_step_fn`). No subclassing required. See the [Quick Start](#quick-start) section.
@@ -31,12 +47,12 @@ The trainer is fully **plug-and-play**: you can supply the model, optimizer, dat
 ```
 FisherAdapTune/
 ├── scripts/                  # Core library
-│   ├── __init__.py           # Public API
-│   ├── adafisher.py          # Diagonal FIM optimizer / Fisher collector
-│   ├── fisher_core.py        # Chunking, JS divergence, masking, freezing
+│   ├── __init__.py           
+│   ├── adafisher.py          # AdaFisher Diagonal Fisher Information Matrix estimator
+│   ├── fisher_core.py        # JS divergence, masking, freezing
 │   ├── trainer.py            # FisherAdapTuneTrainer (main user interface)
-│   └── utils.py              # EarlyStopping, save_checkpoint, plot_js_history
-├── crack_segmentation/       # SAM2 fine-tuning application
+│   └── utils.py              
+├── crack_segmentation/       # Example SAM2 fine-tuning application
 │   ├── train_sam2.py
 │   ├── config_sam2.yaml
 │   └── dataset.py
@@ -155,8 +171,24 @@ Key CLI flags (all override the yaml):
 
 
 
+
+
+## Citation
+If you find FisherAdapTune useful, please cite:
+
+<!-- ```bibtex
+@misc{rostami2026fisheradaptune,
+  title        = {Fisher-Guided Progressive Parameter Selection for Adaptive Fine-Tuning},
+  author       = {Rostami, Ghodsiyeh and Chen, Po-Han and Hosseini, Mahdi S.},
+  year         = {2026},
+  howpublished = {\url{https://github.com/AtlasAnalyticsLab/FisherAdapTune}},
+  note         = {Code repository}
+}
+``` -->
+
+## Contact
+Feel free to contact us for questions about the FisherAdapTune paper, this repository, bug reports, or collaboration. We welcome technical feedback that improves reproducibility, implementation clarity, and future extensions of the method.
+
 ## License
 
 This project is licensed under the [Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License](LICENSE).
-
-You may use, share, and adapt this work for non-commercial purposes with attribution. Derivative works must carry the same license.
