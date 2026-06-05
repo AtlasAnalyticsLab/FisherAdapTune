@@ -1,8 +1,12 @@
-# FisherAdapTune
+# Fisher-Guided Progressive Parameter Selection for Adaptive Fine-Tuning
+
+**Fisher-guided Adaptive Fine-Tuning (FisherAdapTune)** is a model-agnostic framework for adaptive, parameter-efficient fine-tuning. Instead of selecting trainable parameters from fixed architectural rules, it tracks how each parameter group's Fisher geometry evolves during training and keeps updating only the groups that still show meaningful task-driven drift.
+
+The method uses Jensen-Shannon distance between consecutive Fisher distributions as a scale-invariant signal of adaptation: parameter groups with stabilized Fisher structure are progressively frozen, while groups with continunous curvature shift remain trainable. This turns fine-tuning into a dynamic, task-aware process that reduces unnecessary updates, and improves the efficiency-generalization trade-off without adding inference-time overhead.
 
 ![FisherAdapTune](assets/FisherAdapTune.png)
 
-**Fisher-guided Adaptive Fine-Tuning** is a model-agnostic framework that uses the Fisher Information Matrix (FIM) to progressively freeze parameter groups that have converged during fine-tuning, reducing compute and overfitting without manual layer selection.
+<!-- [![arXiv](https://img.shields.io/badge/arXiv-XXXX.XXXXX-b31b1b.svg)](https://arxiv.org/abs/XXXX.XXXXX) -->
 
 ---
 
