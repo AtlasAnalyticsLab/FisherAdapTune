@@ -13,7 +13,7 @@ The method uses Jensen-Shannon distance between consecutive Fisher distributions
 
 💡 Across crack segmentation experiments, FisherAdapTune improves robustness under distribution shift and supports stronger zero-shot transfer without adding inference-time overhead.
 
-<!-- [![arXiv](https://img.shields.io/badge/arXiv-XXXX.XXXXX-b31b1b.svg)](https://arxiv.org/abs/XXXX.XXXXX) -->
+[![arXiv](https://img.shields.io/badge/arXiv-2606.10196-b31b1b.svg)](https://doi.org/10.48550/arXiv.2606.10196)
 
 ---
 
@@ -176,15 +176,18 @@ Key CLI flags (all override the yaml):
 ## Citation
 If you find FisherAdapTune useful, please cite:
 
-<!-- ```bibtex
+```bibtex
 @misc{rostami2026fisheradaptune,
-  title        = {Fisher-Guided Progressive Parameter Selection for Adaptive Fine-Tuning},
-  author       = {Rostami, Ghodsiyeh and Chen, Po-Han and Hosseini, Mahdi S.},
-  year         = {2026},
-  howpublished = {\url{https://github.com/AtlasAnalyticsLab/FisherAdapTune}},
-  note         = {Code repository}
+  title         = {Fisher-Guided Progressive Parameter Selection for Adaptive Fine-Tuning},
+  author        = {Rostami, Ghodsiyeh and Chen, Po-Han and Hosseini, Mahdi S.},
+  year          = {2026},
+  eprint        = {2606.10196},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.LG},
+  doi           = {10.48550/arXiv.2606.10196},
+  url           = {https://arxiv.org/abs/2606.10196}
 }
-``` -->
+```
 
 ## Contact
 Feel free to contact us for questions about the FisherAdapTune paper, this repository, bug reports, or collaboration. We welcome technical feedback that improves reproducibility, implementation clarity, and future extensions of the method.
